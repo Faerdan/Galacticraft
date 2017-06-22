@@ -31,3 +31,4 @@ classes/
 /bin/
 /bin/
 /bin/
+!*.obj
