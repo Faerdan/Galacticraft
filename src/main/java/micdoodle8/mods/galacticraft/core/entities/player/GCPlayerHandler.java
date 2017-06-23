@@ -629,15 +629,12 @@ public class GCPlayerHandler
                     {
                         tankInSlot.damageItem(1, player);
                         playerStats.airRemaining--;
-                        toTake = 0;
                     }
-                    
-                    //Alternatively, take 1 oxygen from Tank 2
-                    if (toTake > 0 && playerStats.airRemaining2 > 0)
+                    else if (playerStats.airRemaining2 > 0)
                     {
+                        //Alternatively, take 1 oxygen from Tank 2
                         tankInSlot2.damageItem(1, player);
                         playerStats.airRemaining2--;
-                        toTake = 0;      
                     }
                 }
             }

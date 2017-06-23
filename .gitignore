@@ -32,3 +32,4 @@ classes/
 /bin/
 /bin/
 !*.obj
+temporary/

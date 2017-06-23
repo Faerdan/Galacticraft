@@ -89,11 +89,8 @@ public class TileEntityMethaneSynthesizer extends TileBaseElectricBlockWithInven
                         Block blockAbove = this.worldObj.getBlock(this.xCoord, this.yCoord + 1, this.zCoord);
                         if (blockAbove != null && blockAbove.getMaterial() == Material.air && blockAbove!=GCBlocks.breatheableAir && blockAbove!=GCBlocks.brightBreatheableAir)
                         {
-                            if (!OxygenUtil.inOxygenBubble(this.worldObj, this.xCoord + 0.5D, this.yCoord + 1D, this.zCoord + 0.5D))
-                            {
-	                        	FluidStack gcAtmosphere = FluidRegistry.getFluidStack("carbondioxide", 4);
-	                            this.gasTank2.fill(gcAtmosphere, true);
-                            }
+                            FluidStack gcAtmosphere = FluidRegistry.getFluidStack("carbondioxide", 4);
+                            this.gasTank2.fill(gcAtmosphere, true);
                         }
                     }
                 }

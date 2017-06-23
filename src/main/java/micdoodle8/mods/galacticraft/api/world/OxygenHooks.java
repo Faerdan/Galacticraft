@@ -12,11 +12,10 @@ import java.lang.reflect.Method;
 public class OxygenHooks
 {
     private static Class<?> oxygenUtilClass;
-    private static Method combusionTestMethod;
+    private static Method combustionTestMethod;
     private static Method breathableAirBlockMethod;
     private static Method breathableAirBlockEntityMethod;
     private static Method torchHasOxygenMethod;
-    private static Method oxygenBubbleMethod;
     private static Method validOxygenSetupMethod;
 
     /**
@@ -32,15 +31,15 @@ public class OxygenHooks
     {
         try
         {
-            if (combusionTestMethod == null)
+            if (combustionTestMethod == null)
             {
                 if (oxygenUtilClass == null)
                 {
                     oxygenUtilClass = Class.forName("micdoodle8.mods.galacticraft.core.util.OxygenUtil");
                 }
-                combusionTestMethod = oxygenUtilClass.getDeclaredMethod("noAtmosphericCombustion", WorldProvider.class);
+                combustionTestMethod = oxygenUtilClass.getDeclaredMethod("noAtmosphericCombustion", WorldProvider.class);
             }
-            return (Boolean)combusionTestMethod.invoke(null, provider);
+            return (Boolean) combustionTestMethod.invoke(null, provider);
         }
         catch (Exception e)
         {
@@ -128,9 +127,7 @@ public class OxygenHooks
 	 * Simplified (better performance) version of the block oxygen check
 	 * for use with torch blocks and other oxygen-requiring blocks
 	 * which can access oxygen on any side.
-	 * 
-	 * NOTE:  this does not run an inOxygenBubble() check, you will need to do
-	 * that also.
+	 *
 	 * 
 	 * @param world
 	 * @param block		The block type of this torch being checked - currently unused
@@ -160,38 +157,6 @@ public class OxygenHooks
 
         return false;
     }
-
-	
-    /**
-     * Test whether a location is inside an Oxygen Bubble from an Oxygen Distributor
-     * 
-     * @param worldObj	World
-     * @param avgX		avg X, avgY, avgZ are the average co-ordinates of the location
-     * @param avgY		(for example, the central point of a block being tested
-     * @param avgZ		or the average position of the centre of a living entity)
-     * @return  True if it is in an oxygen bubble, otherwise false
-     */
-    public static boolean inOxygenBubble(World worldObj, double avgX, double avgY, double avgZ)
-	{
-        try
-        {
-            if (oxygenBubbleMethod == null)
-            {
-                if (oxygenUtilClass == null)
-                {
-                    oxygenUtilClass = Class.forName("micdoodle8.mods.galacticraft.core.util.OxygenUtil");
-                }
-                oxygenBubbleMethod = oxygenUtilClass.getDeclaredMethod("inOxygenBubble", World.class, double.class, double.class, double.class);
-            }
-            return (Boolean)oxygenBubbleMethod.invoke(null, worldObj, avgX, avgY, avgZ);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        return false;
-	}
 
     /**
      * Test whether a player is wearing a working set of Galacticraft

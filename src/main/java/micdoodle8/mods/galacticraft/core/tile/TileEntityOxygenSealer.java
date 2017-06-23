@@ -10,6 +10,7 @@ import micdoodle8.mods.galacticraft.core.oxygen.OxygenPressureProtocol;
 import micdoodle8.mods.galacticraft.core.oxygen.ThreadFindSeal;
 import micdoodle8.mods.galacticraft.core.util.FluidUtil;
 import micdoodle8.mods.galacticraft.core.util.GCCoreUtil;
+import micdoodle8.mods.galacticraft.core.util.GCLog;
 import micdoodle8.mods.miccore.Annotations.NetworkedField;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockAir;
@@ -32,6 +33,9 @@ public class TileEntityOxygenSealer extends TileEntityOxygen implements IInvento
     public boolean lastSealed = false;
 
     public boolean lastDisabled = false;
+
+    public int airBlockCount = 0;
+    public float oxygenConsumptionPerTick = 0;
 
     @NetworkedField(targetSide = Side.CLIENT)
     public boolean active;
@@ -141,7 +145,8 @@ public class TileEntityOxygenSealer extends TileEntityOxygen implements IInvento
             }
         }
     	
-		this.oxygenPerTick = this.sealed ? 2 : UNSEALED_OXYGENPERTICK;
+		this.oxygenPerTick = this.sealed ? ((0.1f * ((float)this.airBlockCount / 1250.0f)) + this.oxygenConsumptionPerTick) : UNSEALED_OXYGENPERTICK;
+        GCLog.info("Oxygen Sealer sealed: " + this.sealed + ", blockCount: " + this.airBlockCount + ", oxygenPerTick: " + this.oxygenPerTick + ", oxygenConsumptionPerTick: " + this.oxygenConsumptionPerTick);
         super.updateEntity();
         
         if (!this.worldObj.isRemote)
@@ -182,7 +187,8 @@ public class TileEntityOxygenSealer extends TileEntityOxygen implements IInvento
             	}
             	else
             	{
-            		this.calculatingSealed = false;
+                    //this.airBlockCount = this.threadSeal.airBlocksPerSealer;
+                    this.calculatingSealed = false;
             		this.sealed = this.threadSeal.sealedFinal.get();
             	}
             }

@@ -1,6 +1,8 @@
 package micdoodle8.mods.galacticraft.core.oxygen;
 
+import micdoodle8.mods.galacticraft.api.block.IBlockOxygenConsumer;
 import micdoodle8.mods.galacticraft.api.block.IPartialSealableBlock;
+import micdoodle8.mods.galacticraft.api.tile.ITileEntityOxygenConsumer;
 import micdoodle8.mods.galacticraft.api.vector.BlockVec3;
 import micdoodle8.mods.galacticraft.core.blocks.BlockUnlitTorch;
 import micdoodle8.mods.galacticraft.core.blocks.GCBlocks;
@@ -24,6 +26,7 @@ public class ThreadFindSeal
     public AtomicBoolean sealedFinal = new AtomicBoolean();
     public static AtomicBoolean anylooping = new AtomicBoolean();
     public AtomicBoolean looping = new AtomicBoolean();
+    public int airBlocksPerSealer = 0;
 
     private World world;
     private BlockVec3 head;
@@ -41,6 +44,7 @@ public class ThreadFindSeal
     private List<BlockVec3> ambientThermalTracked;
     private List<TileEntityOxygenSealer> otherSealers;
     private List<BlockVec3> torchesToUpdate;
+    private List<ITileEntityOxygenConsumer> oxygenConsumers;
     private boolean foundAmbientThermal;
     public List<BlockVec3> leakTrace;
 
@@ -59,6 +63,7 @@ public class ThreadFindSeal
         this.foundAmbientThermal = false;
         this.checkedInit();
         this.torchesToUpdate = new LinkedList<BlockVec3>();
+        this.oxygenConsumers = new LinkedList<ITileEntityOxygenConsumer>();
 
         this.sealersAround = TileEntityOxygenSealer.getSealersAround(world, head.x, head.y, head.z, 1024 * 1024);
 
@@ -197,6 +202,7 @@ public class ThreadFindSeal
             this.currentLayer.clear();
             this.currentLayer.add(this.head);
             this.torchesToUpdate.clear();
+            this.oxygenConsumers.clear();
             if (this.head.x < -29990000 || this.head.z < -29990000 || this.head.x >= 29990000 || this.head.z >= 29990000)
             {
                 this.unsealNearMapEdge();
@@ -212,6 +218,7 @@ public class ThreadFindSeal
                 // unbreathable actually still has an unchecked sealer in it
                 List<TileEntityOxygenSealer> sealersSave = this.sealers;
                 List<BlockVec3> torchesSave = this.torchesToUpdate;
+                List<ITileEntityOxygenConsumer> oxygenConsumersSave = this.oxygenConsumers;
                 List<TileEntityOxygenSealer> sealersDone = new ArrayList();
                 sealersDone.addAll(this.sealers);
                 for (TileEntityOxygenSealer otherSealer : this.otherSealers)
@@ -235,7 +242,7 @@ public class ThreadFindSeal
                         this.currentLayer.clear();
                         this.airToReplace.clear();
                         this.airToReplaceBright.clear();
-                        this.torchesToUpdate = new LinkedList<BlockVec3>();
+                        this.oxygenConsumers = new LinkedList<ITileEntityOxygenConsumer>();
                         this.currentLayer.add(newhead.clone());
                         if (newhead.x < -29990000 || newhead.z < -29990000 || newhead.x >= 29990000 || newhead.z >= 29990000)
                         {
@@ -286,6 +293,7 @@ public class ThreadFindSeal
                 {
                     this.sealers = sealersSave;
                     this.torchesToUpdate = torchesSave;
+                    this.oxygenConsumers = oxygenConsumersSave;
                 }
                 else
                 {
@@ -325,6 +333,7 @@ public class ThreadFindSeal
             headSealer.stopSealThreadCooldown = 75 + TileEntityOxygenSealer.countEntities;
         }
 
+        int sealerCount = 0;
         for (TileEntityOxygenSealer sealer : this.sealers)
         {
             // Sealers which are not the head sealer: put them on cooldown so
@@ -336,6 +345,38 @@ public class ThreadFindSeal
             {
                 sealer.threadSeal = this;
                 sealer.stopSealThreadCooldown = headSealer.stopSealThreadCooldown + 51;
+            }
+
+            if (sealer.active)
+            {
+                sealerCount++;
+            }
+        }
+
+        if (sealerCount == 0)
+        {
+            sealerCount = 1;
+        }
+
+        this.airBlocksPerSealer = (this.checkedSize - 1) / sealerCount;
+
+        float oxygenConsumptionPerTick = 0;
+        if (!this.oxygenConsumers.isEmpty())
+        {
+            for (ITileEntityOxygenConsumer consumer : this.oxygenConsumers)
+            {
+                oxygenConsumptionPerTick += consumer.getPerTickOxygenConsumption();
+            }
+        }
+
+        oxygenConsumptionPerTick = oxygenConsumptionPerTick / sealerCount;
+
+        for (TileEntityOxygenSealer sealer : this.sealers)
+        {
+            if (sealer.active && this.airBlocksPerSealer > 0)
+            {
+                sealer.airBlockCount = this.airBlocksPerSealer;
+                sealer.oxygenConsumptionPerTick = oxygenConsumptionPerTick;
             }
         }
 
@@ -1022,6 +1063,20 @@ public class ThreadFindSeal
      */
     private boolean canBlockPassAirCheck(Block block, BlockVec3 vec, int side)
     {
+        if (block instanceof IBlockOxygenConsumer)
+        {
+            ITileEntityOxygenConsumer consumer = (ITileEntityOxygenConsumer)world.getTileEntity(vec.x, vec.y, vec.z);
+            if (consumer != null)
+            {
+                GCLog.info("ITileEntityOxygenConsumer found! " + consumer.getPerTickOxygenConsumption());
+                this.oxygenConsumers.add(consumer);
+            }
+            else
+            {
+                GCLog.info("IBlockOxygenConsumer found, but no ITileEntityOxygenConsumer!");
+            }
+        }
+
         //Check leaves first, because their isOpaqueCube() test depends on graphics settings
         //(See net.minecraft.block.BlockLeaves.isOpaqueCube()!)
         if (block instanceof BlockLeavesBase)

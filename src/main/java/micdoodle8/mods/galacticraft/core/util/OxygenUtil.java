@@ -67,6 +67,11 @@ public class OxygenUtil
 
     }
 
+    public static boolean worldHasBreathableAtmosphere(World world)
+    {
+        return (world.provider.dimensionId == -1 || world.provider.dimensionId == 0 || world.provider.dimensionId == 1 || !(world.provider instanceof IGalacticraftWorldProvider) || ((IGalacticraftWorldProvider)world.provider).hasBreathableAtmosphere());
+    }
+
     public static boolean isAABBInBreathableAirBlock(EntityLivingBase entity)
     {
         return isAABBInBreathableAirBlock(entity, false);
@@ -74,6 +79,11 @@ public class OxygenUtil
 
     public static boolean isAABBInBreathableAirBlock(EntityLivingBase entity, boolean testThermal)
     {
+        if (OxygenUtil.worldHasBreathableAtmosphere(entity.worldObj))
+        {
+            return true;
+        }
+
         double y = entity.posY + entity.getEyeHeight();
         double x = entity.posX;
         double z = entity.posZ;
@@ -96,25 +106,25 @@ public class OxygenUtil
     @SuppressWarnings("rawtypes")
     public static boolean isAABBInBreathableAirBlock(World world, AxisAlignedBB bb, boolean testThermal)
     {
-        final double avgX = (bb.minX + bb.maxX) / 2.0D;
-        final double avgY = (bb.minY + bb.maxY) / 2.0D;
-        final double avgZ = (bb.minZ + bb.maxZ) / 2.0D;
-
-        if (testThermal)
-        {
-            return OxygenUtil.isInOxygenAndThermalBlock(world, bb.copy().contract(0.001D, 0.001D, 0.001D));
-        }
-
-        if (OxygenUtil.inOxygenBubble(world, avgX, avgY, avgZ))
+        if (OxygenUtil.worldHasBreathableAtmosphere(world))
         {
             return true;
         }
+
+        final double avgX = (bb.minX + bb.maxX) / 2.0D;
+        final double avgY = (bb.minY + bb.maxY) / 2.0D;
+        final double avgZ = (bb.minZ + bb.maxZ) / 2.0D;
 
         return OxygenUtil.isInOxygenBlock(world, bb.copy().contract(0.001D, 0.001D, 0.001D));
     }
 
     public static boolean isInOxygenBlock(World world, AxisAlignedBB bb)
     {
+        if (OxygenUtil.worldHasBreathableAtmosphere(world))
+        {
+            return true;
+        }
+
         int i = MathHelper.floor_double(bb.minX);
         int j = MathHelper.floor_double(bb.maxX);
         int k = MathHelper.floor_double(bb.minY);
@@ -182,7 +192,11 @@ public class OxygenUtil
      */
     public static boolean checkTorchHasOxygen(World world, Block block, int x, int y, int z)
     {
-    	if (OxygenUtil.inOxygenBubble(world, x + 0.5D, y + 0.6D, z + 0.5D)) return true;
+        if (OxygenUtil.worldHasBreathableAtmosphere(world))
+        {
+            return true;
+        }
+
     	OxygenUtil.checked = new HashSet();
         BlockVec3 vec = new BlockVec3(x, y, z);
         for (int side = 0; side < 6; side++)
@@ -318,8 +332,8 @@ public class OxygenUtil
 
     public static int getDrainSpacing(ItemStack tank, ItemStack tank2)
     {
-        boolean tank1Valid = tank != null && tank.getItem() instanceof ItemOxygenTank && tank.getMaxDamage() - tank.getItemDamage() > 0;
-        boolean tank2Valid = tank2 != null && tank2.getItem() instanceof ItemOxygenTank && tank2.getMaxDamage() - tank2.getItemDamage() > 0;
+        boolean tank1Valid = tank != null && tank.getItem() instanceof ItemOxygenTank && (tank.getMaxDamage() - tank.getItemDamage()) > 0;
+        boolean tank2Valid = tank2 != null && tank2.getItem() instanceof ItemOxygenTank && (tank2.getMaxDamage() - tank2.getItemDamage()) > 0;
 
         if (!tank1Valid && !tank2Valid)
         {
@@ -477,28 +491,6 @@ public class OxygenUtil
     
     public static boolean noAtmosphericCombustion(WorldProvider provider)
     {
-    	if (provider instanceof IGalacticraftWorldProvider)
-    	{
-    		return (!((IGalacticraftWorldProvider) provider).isGasPresent(IAtmosphericGas.OXYGEN) && !((IGalacticraftWorldProvider) provider).hasBreathableAtmosphere());
-    	}
-    	
-    	return false;
+    	return !OxygenUtil.worldHasBreathableAtmosphere(provider.worldObj);
     }
-
-	public static boolean inOxygenBubble(World worldObj, double avgX, double avgY, double avgZ)
-	{
-        for (final BlockVec3Dim blockVec : TileEntityOxygenDistributor.loadedTiles)
-        {
-            if (blockVec != null && blockVec.dim == worldObj.provider.dimensionId)
-            {
-            	TileEntity tile = worldObj.getTileEntity(blockVec.x, blockVec.y, blockVec.z);
-            	if (tile instanceof TileEntityOxygenDistributor)
-            	{
-	            	if (((TileEntityOxygenDistributor) tile).inBubble(avgX, avgY, avgZ)) return true;
-            	}
-            }
-        }
-
-		return false;
-	}
 }
