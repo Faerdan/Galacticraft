@@ -5,7 +5,7 @@ import micdoodle8.mods.galacticraft.core.blocks.BlockOxygenDetector;
 import micdoodle8.mods.galacticraft.core.util.OxygenUtil;
 import net.minecraft.util.AxisAlignedBB;
 
-public class TileEntityTileEntityOxygenDetector extends TileEntityAdvanced implements ITileEntityOxygenConsumer
+public class TileEntityOxygenDetector extends TileEntityAdvanced implements ITileEntityOxygenConsumer
 {
     @Override
     public void updateEntity()
@@ -42,5 +42,5 @@ public class TileEntityTileEntityOxygenDetector extends TileEntityAdvanced imple
     }
 
     @Override
-    public float getPerTickOxygenConsumption() { return 0.25f; } // 5/s oxygen
+    public float getPerTickOxygenConsumption() { return 0f; } // 0.036F 0.72/s oxygen
 }

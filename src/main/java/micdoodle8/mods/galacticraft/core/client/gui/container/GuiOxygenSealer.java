@@ -19,6 +19,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,8 +100,9 @@ public class GuiOxygenSealer extends GuiContainerGC
         this.buttonDisable.enabled = this.sealer.disableCooldown == 0;
         this.buttonDisable.displayString = this.sealer.disabled ? GCCoreUtil.translate("gui.button.enableseal.name") : GCCoreUtil.translate("gui.button.disableseal.name");
         this.fontRendererObj.drawString(status, this.xSize / 2 - this.fontRendererObj.getStringWidth(status) / 2, 50, 4210752);
-        int adjustedOxygenPerTick = (int)(this.sealer.oxygenPerTick * 20);
-        if (this.sealer.disabled || this.sealer.getEnergyStoredGC() < this.sealer.storage.getMaxExtract()) adjustedOxygenPerTick = 0;
+        DecimalFormat df = new DecimalFormat("#.##");
+        String adjustedOxygenPerTick = df.format(this.sealer.oxygenPerTick * 20);
+        if (!this.sealer.active) adjustedOxygenPerTick = "";
         status = GCCoreUtil.translate("gui.oxygenUse.desc") + ": " + adjustedOxygenPerTick + GCCoreUtil.translate("gui.perSecond");
         this.fontRendererObj.drawString(status, this.xSize / 2 - this.fontRendererObj.getStringWidth(status) / 2, 60, 4210752);
         status = GCCoreUtil.translate("gui.message.thermalStatus.name") + ": " + this.getThermalStatus();

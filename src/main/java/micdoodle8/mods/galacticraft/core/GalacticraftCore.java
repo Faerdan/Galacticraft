@@ -101,7 +101,7 @@ import micdoodle8.mods.galacticraft.core.tile.TileEntityNasaWorkbench;
 import micdoodle8.mods.galacticraft.core.tile.TileEntityOxygenCollector;
 import micdoodle8.mods.galacticraft.core.tile.TileEntityOxygenCompressor;
 import micdoodle8.mods.galacticraft.core.tile.TileEntityOxygenDecompressor;
-import micdoodle8.mods.galacticraft.core.tile.TileEntityTileEntityOxygenDetector;
+import micdoodle8.mods.galacticraft.core.tile.TileEntityOxygenDetector;
 import micdoodle8.mods.galacticraft.core.tile.TileEntityOxygenDistributor;
 import micdoodle8.mods.galacticraft.core.tile.TileEntityOxygenPipe;
 import micdoodle8.mods.galacticraft.core.tile.TileEntityOxygenSealer;
@@ -638,7 +638,7 @@ public class GalacticraftCore
         GameRegistry.registerTileEntity(TileEntityMulti.class, "Dummy Block");
         GameRegistry.registerTileEntity(TileEntityOxygenSealer.class, "Air Sealer");
         GameRegistry.registerTileEntity(TileEntityDungeonSpawner.class, "Dungeon Boss Spawner");
-        GameRegistry.registerTileEntity(TileEntityTileEntityOxygenDetector.class, "Oxygen Detector");
+        GameRegistry.registerTileEntity(TileEntityOxygenDetector.class, "Oxygen Detector");
         GameRegistry.registerTileEntity(TileEntityBuggyFueler.class, "Buggy Fueler");
         GameRegistry.registerTileEntity(TileEntityBuggyFuelerSingle.class, "Buggy Fueler Single");
         GameRegistry.registerTileEntity(TileEntityCargoLoader.class, "Cargo Loader");

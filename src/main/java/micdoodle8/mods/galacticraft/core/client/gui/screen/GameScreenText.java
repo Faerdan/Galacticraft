@@ -313,9 +313,9 @@ public class GameScreenText implements IGameScreen
 
     private String makeOxygenString(int oxygen)
     { 	
-    	//Server takes 1 air away every 10 ticks (GCPlayerHandler.checkOxygen())
-    	int sp1 = oxygen * 10 / 20;
-    	int sp2 = ((oxygen * 10) % 20) / 2;
+    	//Server takes 1 air away every 9 ticks (GCPlayerHandler.checkOxygen())
+    	int sp1 = oxygen * 9 / 20;
+    	int sp2 = ((oxygen * 9) % 20) / 2;
     	String spstr1 = "" + sp1;
     	String spstr2 = "" + sp2;
     	return spstr1 + "." + spstr2;

@@ -33,6 +33,7 @@ import micdoodle8.mods.galacticraft.core.items.GCItems;
 import micdoodle8.mods.galacticraft.core.network.PacketSimple;
 import micdoodle8.mods.galacticraft.core.network.PacketSimple.EnumSimplePacket;
 import micdoodle8.mods.galacticraft.core.tick.TickHandlerServer;
+import micdoodle8.mods.galacticraft.core.tile.TileEntityOxygenSealer;
 import micdoodle8.mods.galacticraft.core.tile.TileEntityTelemetry;
 import micdoodle8.mods.galacticraft.core.util.*;
 import micdoodle8.mods.galacticraft.core.wrappers.Footprint;
@@ -66,11 +67,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class GCPlayerHandler
 {
-    private static final int OXYGENHEIGHTLIMIT = 450;
+    private static final int OXYGENHEIGHTLIMIT = 255;
     private boolean isClient = FMLCommonHandler.instance().getEffectiveSide().isClient();
 	private ConcurrentHashMap<UUID, GCPlayerStats> playerStatsMap = new ConcurrentHashMap<UUID, GCPlayerStats>();
 	private Field ftc;
 	private HashMap<Item, Item> torchItems = new HashMap<Item, Item>();
+
+    private boolean canBreathe = true;
 
     public ConcurrentHashMap<UUID, GCPlayerStats> getServerStatList()
     {
@@ -178,7 +181,6 @@ public class GCPlayerHandler
         GCPlayer.thermalChestplateInSlot = GCPlayer.extendedInventory.getStackInSlot(7);
         GCPlayer.thermalLeggingsInSlot = GCPlayer.extendedInventory.getStackInSlot(8);
         GCPlayer.thermalBootsInSlot = GCPlayer.extendedInventory.getStackInSlot(9);
-        //
 
         if (GCPlayer.frequencyModuleInSlot != GCPlayer.lastFrequencyModuleInSlot || forceSend)
         {
@@ -238,7 +240,7 @@ public class GCPlayerHandler
             if (GCPlayer.tankInSlot1 == null)
             {
                 GCPlayerHandler.sendGearUpdatePacket(player, EnumModelPacket.REMOVE_LEFT_TANK);
-                GCPlayer.airRemaining = 0;
+                GCPlayer.oxygenTank1Level = 0;
                 GCPlayerHandler.sendAirRemainingPacket(player, GCPlayer);
             }
             else if (GCPlayer.lastTankInSlot1 == null || forceSend)
@@ -255,7 +257,7 @@ public class GCPlayerHandler
                 {
                     GCPlayerHandler.sendGearUpdatePacket(player, EnumModelPacket.ADDLEFTREDTANK);
                 }
-                GCPlayer.airRemaining = GCPlayer.tankInSlot1.getMaxDamage() - GCPlayer.tankInSlot1.getItemDamage();
+                GCPlayer.oxygenTank1Level = GCPlayer.tankInSlot1.getMaxDamage() - GCPlayer.tankInSlot1.getItemDamage();
                 GCPlayerHandler.sendAirRemainingPacket(player, GCPlayer);
             }
             //if the else is reached then both tankInSlot and lastTankInSlot are non-null
@@ -273,7 +275,7 @@ public class GCPlayerHandler
                 {
                     GCPlayerHandler.sendGearUpdatePacket(player, EnumModelPacket.ADDLEFTREDTANK);
                 }
-                GCPlayer.airRemaining = GCPlayer.tankInSlot1.getMaxDamage() - GCPlayer.tankInSlot1.getItemDamage();
+                GCPlayer.oxygenTank1Level = GCPlayer.tankInSlot1.getMaxDamage() - GCPlayer.tankInSlot1.getItemDamage();
                 GCPlayerHandler.sendAirRemainingPacket(player, GCPlayer);
             }
 
@@ -287,7 +289,7 @@ public class GCPlayerHandler
             if (GCPlayer.tankInSlot2 == null)
             {
                 GCPlayerHandler.sendGearUpdatePacket(player, EnumModelPacket.REMOVE_RIGHT_TANK);
-                GCPlayer.airRemaining2 = 0;
+                GCPlayer.oxygenTank2Level = 0;
                 GCPlayerHandler.sendAirRemainingPacket(player, GCPlayer);
             }
             else if (GCPlayer.lastTankInSlot2 == null || forceSend)
@@ -304,7 +306,7 @@ public class GCPlayerHandler
                 {
                     GCPlayerHandler.sendGearUpdatePacket(player, EnumModelPacket.ADDRIGHTREDTANK);
                 }
-                GCPlayer.airRemaining2 = GCPlayer.tankInSlot2.getMaxDamage() - GCPlayer.tankInSlot2.getItemDamage();
+                GCPlayer.oxygenTank2Level = GCPlayer.tankInSlot2.getMaxDamage() - GCPlayer.tankInSlot2.getItemDamage();
                 GCPlayerHandler.sendAirRemainingPacket(player, GCPlayer);
             }
             //if the else is reached then both tankInSlot and lastTankInSlot are non-null
@@ -322,7 +324,7 @@ public class GCPlayerHandler
                 {
                     GCPlayerHandler.sendGearUpdatePacket(player, EnumModelPacket.ADDRIGHTREDTANK);
                 }
-                GCPlayer.airRemaining2 = GCPlayer.tankInSlot2.getMaxDamage() - GCPlayer.tankInSlot2.getItemDamage();
+                GCPlayer.oxygenTank2Level = GCPlayer.tankInSlot2.getMaxDamage() - GCPlayer.tankInSlot2.getItemDamage();
                 GCPlayerHandler.sendAirRemainingPacket(player, GCPlayer);
             }
 
@@ -598,78 +600,69 @@ public class GCPlayerHandler
 
 	protected void checkOxygen(EntityPlayerMP player, GCPlayerStats playerStats)
     {
-        if ((player.dimension == 0 || player.worldObj.provider instanceof IGalacticraftWorldProvider) && (!(player.dimension == 0 || ((IGalacticraftWorldProvider) player.worldObj.provider).hasBreathableAtmosphere()) || player.posY > GCPlayerHandler.OXYGENHEIGHTLIMIT) && !player.capabilities.isCreativeMode && !(player.ridingEntity instanceof EntityLanderBase) && !(player.ridingEntity instanceof EntityAutoRocket) && !(player.ridingEntity instanceof EntityCelestialFake) && !CompatibilityManager.isAndroid(player))
+        boolean worldHasBreathableAtmosphere = OxygenUtil.worldHasBreathableAtmosphere(player.worldObj);
+        if ((!worldHasBreathableAtmosphere || (worldHasBreathableAtmosphere && player.posY > GCPlayerHandler.OXYGENHEIGHTLIMIT)) && !player.capabilities.isCreativeMode && !(player.ridingEntity instanceof EntityLanderBase) && !(player.ridingEntity instanceof EntityAutoRocket) && !(player.ridingEntity instanceof EntityCelestialFake) && !CompatibilityManager.isAndroid(player))
         {
-            final ItemStack tankInSlot = playerStats.extendedInventory.getStackInSlot(2);
+            final ItemStack tankInSlot1 = playerStats.extendedInventory.getStackInSlot(2);
             final ItemStack tankInSlot2 = playerStats.extendedInventory.getStackInSlot(3);
 
-            final int drainSpacing = OxygenUtil.getDrainSpacing(tankInSlot, tankInSlot2);
+            playerStats.oxygenTank1Level = 0;
+            playerStats.oxygenTank2Level = 0;
 
-        	if (tankInSlot == null)
+            if (OxygenUtil.isValidOxygenTank(tankInSlot1))
             {
-                playerStats.airRemaining = 0;
+                playerStats.oxygenTank1Level = OxygenUtil.getOxygenTankLevel(tankInSlot1);
             }
-        	else
-                playerStats.airRemaining = tankInSlot.getMaxDamage() - tankInSlot.getItemDamage();
 
-            if (tankInSlot2 == null)
+            if (OxygenUtil.isValidOxygenTank(tankInSlot2))
             {
-                playerStats.airRemaining2 = 0;
+                playerStats.oxygenTank2Level = OxygenUtil.getOxygenTankLevel(tankInSlot2);
             }
-            else
-                playerStats.airRemaining2 = tankInSlot2.getMaxDamage() - tankInSlot2.getItemDamage();
 
-            if (drainSpacing > 0)
+            // Attempt to drain (breathe) oxygen every 9 ticks (2.2222222 per second)
+            if ((player.ticksExisted - 1) % 9 == 0 && !playerStats.usingPlanetSelectionGui)
             {
-                if ((player.ticksExisted - 1) % drainSpacing == 0 && !OxygenUtil.isAABBInBreathableAirBlock(player) && !playerStats.usingPlanetSelectionGui)
+                canBreathe = false;
+
+                if (OxygenUtil.isAABBInBreathableAirBlock(player))
                 {
-                    int toTake = 1;
-                    //Take 1 oxygen from Tank 1
-                    if (playerStats.airRemaining > 0)
-                    {
-                        tankInSlot.damageItem(1, player);
-                        playerStats.airRemaining--;
-                    }
-                    else if (playerStats.airRemaining2 > 0)
-                    {
-                        //Alternatively, take 1 oxygen from Tank 2
-                        tankInSlot2.damageItem(1, player);
-                        playerStats.airRemaining2--;
-                    }
-                }
-            }
-            else
-            {
-                if ((player.ticksExisted - 1) % 60 == 0)
-                {
-                    if (OxygenUtil.isAABBInBreathableAirBlock(player))
-                    {
-                        if (playerStats.airRemaining < 90 && tankInSlot != null)
-                        {
-                            playerStats.airRemaining = Math.min(playerStats.airRemaining + 1, tankInSlot.getMaxDamage() - tankInSlot.getItemDamage());
-                        }
+                    canBreathe = true;
 
-                        if (playerStats.airRemaining2 < 90 && tankInSlot2 != null)
-                        {
-                            playerStats.airRemaining2 = Math.min(playerStats.airRemaining2 + 1, tankInSlot2.getMaxDamage() - tankInSlot2.getItemDamage());
-                        }
-                    }
-                    else
+                    if (!player.worldObj.isRemote)
                     {
-                        if (playerStats.airRemaining > 0)
-                        {
-                            playerStats.airRemaining--;
+                        TileEntityOxygenSealer closestSealer = null;
+                        double closestSealerDistanceSqr = -1;
+                        for (TileEntityOxygenSealer sealer : TileEntityOxygenSealer.loadedTiles) {
+                            double distanceSqr = sealer.getDistanceFrom(player.posX, player.posY, player.posZ);
+                            if (sealer.active && (closestSealer == null || distanceSqr < closestSealerDistanceSqr)) {
+                                closestSealer = sealer;
+                                closestSealerDistanceSqr = distanceSqr;
+                            }
                         }
+                        if (closestSealer != null) {
+                            closestSealer.setOxygenStored(closestSealer.getOxygenStored() - 1);
 
-                        if (playerStats.airRemaining2 > 0)
-                        {
-                            playerStats.airRemaining2--;
+                            if (ConfigManagerCore.enableDebug) {
+                                GCLog.info("Player drawing oxygen from distributor at " + closestSealer.xCoord + ", " + closestSealer.yCoord + ", " + closestSealer.zCoord + " (Remaining oxygen: " + closestSealer.getOxygenStored() + ")");
+                            }
                         }
                     }
                 }
-            }
 
-            final boolean airEmpty = playerStats.airRemaining <= 0 && playerStats.airRemaining2 <= 0;
+                if (!canBreathe && OxygenUtil.hasValidOxygenSetup(player) && playerStats.oxygenTank1Level > 0 || playerStats.oxygenTank2Level > 0)
+                {
+                    canBreathe = true;
+
+                    if (playerStats.oxygenTank1Level > 0)
+                    {
+                        OxygenUtil.drainOxygenTank(player, tankInSlot1, 1);
+                    }
+                    else if (playerStats.oxygenTank2Level > 0)
+                    {
+                        OxygenUtil.drainOxygenTank(player, tankInSlot2, 1);
+                    }
+                }
+            }
 
             if (player.isOnLadder())
             {
@@ -677,7 +670,7 @@ public class GCPlayerHandler
             }
             else
             {
-                playerStats.oxygenSetupValid = !((!OxygenUtil.hasValidOxygenSetup(player) || airEmpty) && !OxygenUtil.isAABBInBreathableAirBlock(player));
+                playerStats.oxygenSetupValid = canBreathe;
             }
 
             if (!player.worldObj.isRemote && player.isEntityAlive())
@@ -707,18 +700,9 @@ public class GCPlayerHandler
         			playerStats.incrementalDamage = 0;
             }
         }
-        else if ((player.ticksExisted - 1) % 20 == 0 && !player.capabilities.isCreativeMode && playerStats.airRemaining < 90)
-        {
-            playerStats.airRemaining += 1;
-            playerStats.airRemaining2 += 1;
-        }
-        else if (player.capabilities.isCreativeMode)
-        {
-            playerStats.airRemaining = 90;
-            playerStats.airRemaining2 = 90;
-        }
         else
         {
+            canBreathe = true;
             playerStats.oxygenSetupValid = true;
         }
     }
@@ -985,7 +969,7 @@ public class GCPlayerHandler
     {
         final float f1 = playerStats.tankInSlot1 == null ? 0.0F : playerStats.tankInSlot1.getMaxDamage() / 90.0F;
         final float f2 = playerStats.tankInSlot2 == null ? 0.0F : playerStats.tankInSlot2.getMaxDamage() / 90.0F;
-        GalacticraftCore.packetPipeline.sendTo(new PacketSimple(EnumSimplePacket.C_AIR_REMAINING, new Object[] { MathHelper.floor_float(playerStats.airRemaining / f1), MathHelper.floor_float(playerStats.airRemaining2 / f2), player.getGameProfile().getName() }), player);
+        GalacticraftCore.packetPipeline.sendTo(new PacketSimple(EnumSimplePacket.C_AIR_REMAINING, new Object[] { MathHelper.floor_float(playerStats.oxygenTank1Level / f1), MathHelper.floor_float(playerStats.oxygenTank2Level / f2), player.getGameProfile().getName() }), player);
     }
 
     protected void sendThermalLevelPacket(EntityPlayerMP player, GCPlayerStats playerStats)

@@ -135,7 +135,7 @@ public class TileEntityTelemetry extends TileEntity
 						{
 							data[3] = ((EntityPlayerMP) eLiving).getFoodStats().getFoodLevel() * 5;
 							GCPlayerStats stats = GCPlayerStats.get((EntityPlayerMP) eLiving);
-							data[4] = stats.airRemaining * 4096 + stats.airRemaining2;
+							data[4] = stats.oxygenTank1Level * 4096 + stats.oxygenTank2Level;
 							UUID uuid = ((EntityPlayerMP) eLiving).getUniqueID();
 							if (uuid != null) strUUID = uuid.toString();
 						}

@@ -30,8 +30,8 @@ public class GCPlayerStats implements IExtendedEntityProperties
 
     public InventoryExtended extendedInventory = new InventoryExtended();
 
-    public int airRemaining;
-    public int airRemaining2;
+    public int oxygenTank1Level;
+    public int oxygenTank2Level;
 
     public int thermalLevel;
     public boolean thermalLevelNormalising;
@@ -137,7 +137,7 @@ public class GCPlayerStats implements IExtendedEntityProperties
     public void saveNBTData(NBTTagCompound nbt)
     {
         nbt.setTag("ExtendedInventoryGC", this.extendedInventory.writeToNBT(new NBTTagList()));
-        nbt.setInteger("playerAirRemaining", this.airRemaining);
+        nbt.setInteger("playerAirRemaining", this.oxygenTank1Level);
         nbt.setInteger("damageCounter", this.damageCounter);
         nbt.setBoolean("OxygenSetupValid", this.oxygenSetupValid);
         nbt.setBoolean("usingParachute2", this.usingParachute);
@@ -209,7 +209,7 @@ public class GCPlayerStats implements IExtendedEntityProperties
     @Override
     public void loadNBTData(NBTTagCompound nbt)
     {
-        this.airRemaining = nbt.getInteger("playerAirRemaining");
+        this.oxygenTank1Level = nbt.getInteger("playerAirRemaining");
         this.damageCounter = nbt.getInteger("damageCounter");
         this.oxygenSetupValid = this.lastOxygenSetupValid = nbt.getBoolean("OxygenSetupValid");
         this.thermalLevel = nbt.getInteger("thermalLevel");

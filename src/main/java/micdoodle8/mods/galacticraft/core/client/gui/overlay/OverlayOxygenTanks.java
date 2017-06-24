@@ -20,11 +20,21 @@ public class OverlayOxygenTanks extends Overlay
 
     private static Minecraft minecraft = FMLClientHandler.instance().getClient();
 
+    private static long screenTicks;
+
     /**
      * Render the GUI that displays oxygen level in tanks
      */
-    public static void renderOxygenTankIndicator(int heatLevel, int oxygenInTank1, int oxygenInTank2, boolean right, boolean top, boolean invalid)
+    public static void renderOxygenTankIndicator(int heatLevel, int oxygenInTank1, int oxygenInTank2, boolean right, boolean top, boolean invalid, boolean displayOxygenWarning)
     {
+        screenTicks++;
+
+        float alpha = 1.0F;
+        if (displayOxygenWarning)
+        {
+            alpha = (float)(0.25F * Math.sin(screenTicks / 20.0F)) + 0.75F;
+        }
+
         final ScaledResolution scaledresolution = ClientUtil.getScaledRes(OverlayOxygenTanks.minecraft, OverlayOxygenTanks.minecraft.displayWidth, OverlayOxygenTanks.minecraft.displayHeight);
         final int i = scaledresolution.getScaledWidth();
         final int j = scaledresolution.getScaledHeight();
@@ -33,21 +43,21 @@ public class OverlayOxygenTanks extends Overlay
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glDepthMask(false);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, alpha);
         GL11.glDisable(GL11.GL_ALPHA_TEST);
         FMLClientHandler.instance().getClient().renderEngine.bindTexture(OverlayOxygenTanks.guiTexture);
         final Tessellator tessellator = Tessellator.instance;
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_ALPHA_TEST);
         GL11.glDisable(GL11.GL_LIGHTING);
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, alpha);
 
-        int minLeftX = 0;
-        int maxLeftX = 0;
-        int minRightX = 0;
-        int maxRightX = 0;
-        double bottomY = 0;
-        double topY = 0;
+        int minLeftX;
+        int maxLeftX;
+        int minRightX;
+        int maxRightX;
+        double bottomY;
+        double topY;
         double zLevel = -190.0D;
 
         if (right)

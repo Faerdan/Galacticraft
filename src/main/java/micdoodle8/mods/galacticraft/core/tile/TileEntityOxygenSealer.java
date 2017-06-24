@@ -8,6 +8,7 @@ import micdoodle8.mods.galacticraft.core.energy.tile.EnergyStorageTile;
 import micdoodle8.mods.galacticraft.core.items.GCItems;
 import micdoodle8.mods.galacticraft.core.oxygen.OxygenPressureProtocol;
 import micdoodle8.mods.galacticraft.core.oxygen.ThreadFindSeal;
+import micdoodle8.mods.galacticraft.core.util.ConfigManagerCore;
 import micdoodle8.mods.galacticraft.core.util.FluidUtil;
 import micdoodle8.mods.galacticraft.core.util.GCCoreUtil;
 import micdoodle8.mods.galacticraft.core.util.GCLog;
@@ -34,11 +35,15 @@ public class TileEntityOxygenSealer extends TileEntityOxygen implements IInvento
 
     public boolean lastDisabled = false;
 
-    public int airBlockCount = 0;
+    @NetworkedField(targetSide = Side.CLIENT)
+    public int atmosphereVolume = 0;
+
+    @NetworkedField(targetSide = Side.CLIENT)
     public float oxygenConsumptionPerTick = 0;
 
     @NetworkedField(targetSide = Side.CLIENT)
     public boolean active;
+
     private ItemStack[] containingItems = new ItemStack[3];
     public ThreadFindSeal threadSeal;
     @NetworkedField(targetSide = Side.CLIENT)
@@ -145,12 +150,15 @@ public class TileEntityOxygenSealer extends TileEntityOxygen implements IInvento
             }
         }
     	
-		this.oxygenPerTick = this.sealed ? ((0.1f * ((float)this.airBlockCount / 1250.0f)) + this.oxygenConsumptionPerTick) : UNSEALED_OXYGENPERTICK;
-        GCLog.info("Oxygen Sealer sealed: " + this.sealed + ", blockCount: " + this.airBlockCount + ", oxygenPerTick: " + this.oxygenPerTick + ", oxygenConsumptionPerTick: " + this.oxygenConsumptionPerTick);
+		this.oxygenPerTick = this.sealed ? ((0.092f * ((float)this.atmosphereVolume / 1250.0f)) + this.oxygenConsumptionPerTick) : UNSEALED_OXYGENPERTICK;
         super.updateEntity();
         
         if (!this.worldObj.isRemote)
         {
+            if (ConfigManagerCore.enableDebug) {
+                GCLog.info("Oxygen Sealer sealed: " + this.sealed + ", blockCount: " + this.atmosphereVolume + ", oxygenPerTick: " + this.oxygenPerTick + ", oxygenConsumptionPerTick: " + this.oxygenConsumptionPerTick);
+            }
+
             // Some code to count the number of Oxygen Sealers being updated,
             // tick by tick - needed for queueing
             TileEntityOxygenSealer.countTemp++;
@@ -187,7 +195,7 @@ public class TileEntityOxygenSealer extends TileEntityOxygen implements IInvento
             	}
             	else
             	{
-                    //this.airBlockCount = this.threadSeal.airBlocksPerSealer;
+                    //this.atmosphereVolume = this.threadSeal.atmosphereVolumePerSealer;
                     this.calculatingSealed = false;
             		this.sealed = this.threadSeal.sealedFinal.get();
             	}

@@ -270,8 +270,8 @@ public class PacketSimple extends Packet implements IPacket
         case C_AIR_REMAINING:
             if (String.valueOf(this.data.get(2)).equals(String.valueOf(FMLClientHandler.instance().getClient().thePlayer.getGameProfile().getName())))
             {
-                TickHandlerClient.airRemaining = (Integer) this.data.get(0);
-                TickHandlerClient.airRemaining2 = (Integer) this.data.get(1);
+                TickHandlerClient.oxygenTank1Level = (Integer) this.data.get(0);
+                TickHandlerClient.oxygenTank2Level = (Integer) this.data.get(1);
             }
             break;
         case C_UPDATE_DIMENSION_LIST:

@@ -26,7 +26,7 @@ public class ThreadFindSeal
     public AtomicBoolean sealedFinal = new AtomicBoolean();
     public static AtomicBoolean anylooping = new AtomicBoolean();
     public AtomicBoolean looping = new AtomicBoolean();
-    public int airBlocksPerSealer = 0;
+    public int atmosphereVolumePerSealer = 0;
 
     private World world;
     private BlockVec3 head;
@@ -358,7 +358,7 @@ public class ThreadFindSeal
             sealerCount = 1;
         }
 
-        this.airBlocksPerSealer = (this.checkedSize - 1) / sealerCount;
+        this.atmosphereVolumePerSealer = (this.checkedSize - 1) / sealerCount;
 
         float oxygenConsumptionPerTick = 0;
         if (!this.oxygenConsumers.isEmpty())
@@ -373,9 +373,9 @@ public class ThreadFindSeal
 
         for (TileEntityOxygenSealer sealer : this.sealers)
         {
-            if (sealer.active && this.airBlocksPerSealer > 0)
+            if (sealer.active && this.atmosphereVolumePerSealer > 0)
             {
-                sealer.airBlockCount = this.airBlocksPerSealer;
+                sealer.atmosphereVolume = this.atmosphereVolumePerSealer;
                 sealer.oxygenConsumptionPerTick = oxygenConsumptionPerTick;
             }
         }
@@ -1068,12 +1068,14 @@ public class ThreadFindSeal
             ITileEntityOxygenConsumer consumer = (ITileEntityOxygenConsumer)world.getTileEntity(vec.x, vec.y, vec.z);
             if (consumer != null)
             {
-                GCLog.info("ITileEntityOxygenConsumer found! " + consumer.getPerTickOxygenConsumption());
+                if (ConfigManagerCore.enableDebug) {
+                    GCLog.info("ITileEntityOxygenConsumer found! " + consumer.getPerTickOxygenConsumption());
+                }
                 this.oxygenConsumers.add(consumer);
             }
             else
             {
-                GCLog.info("IBlockOxygenConsumer found, but no ITileEntityOxygenConsumer!");
+                GCLog.severe("IBlockOxygenConsumer found, but no ITileEntityOxygenConsumer!");
             }
         }
 

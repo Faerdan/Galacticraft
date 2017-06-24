@@ -12,8 +12,6 @@ import micdoodle8.mods.galacticraft.api.item.IBreathableArmor.EnumGearType;
 import micdoodle8.mods.galacticraft.api.transmission.NetworkType;
 import micdoodle8.mods.galacticraft.api.transmission.tile.IConnector;
 import micdoodle8.mods.galacticraft.api.vector.BlockVec3;
-import micdoodle8.mods.galacticraft.api.vector.BlockVec3Dim;
-import micdoodle8.mods.galacticraft.api.world.IAtmosphericGas;
 import micdoodle8.mods.galacticraft.api.world.IGalacticraftWorldProvider;
 import micdoodle8.mods.galacticraft.core.blocks.GCBlocks;
 import micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler;
@@ -22,7 +20,6 @@ import micdoodle8.mods.galacticraft.core.items.ItemOxygenGear;
 import micdoodle8.mods.galacticraft.core.items.ItemOxygenMask;
 import micdoodle8.mods.galacticraft.core.items.ItemOxygenTank;
 import micdoodle8.mods.galacticraft.core.oxygen.OxygenPressureProtocol;
-import micdoodle8.mods.galacticraft.core.tile.TileEntityOxygenDistributor;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.gui.GuiChat;
@@ -330,23 +327,33 @@ public class OxygenUtil
         return !block.isSideSolid(world, vec.x, vec.y, vec.z, ForgeDirection.getOrientation(side ^ 1));
     }
 
-    public static int getDrainSpacing(ItemStack tank, ItemStack tank2)
+    public static boolean isValidOxygenTank(ItemStack tank)
     {
-        boolean tank1Valid = tank != null && tank.getItem() instanceof ItemOxygenTank && (tank.getMaxDamage() - tank.getItemDamage()) > 0;
-        boolean tank2Valid = tank2 != null && tank2.getItem() instanceof ItemOxygenTank && (tank2.getMaxDamage() - tank2.getItemDamage()) > 0;
+        return tank != null && tank.getItem() instanceof ItemOxygenTank;
+    }
 
-        if (!tank1Valid && !tank2Valid)
+    public static int getOxygenTankCapacity(ItemStack tank)
+    {
+        return tank.getMaxDamage();
+    }
+
+    public static int getOxygenTankLevel(ItemStack tank)
+    {
+        return OxygenUtil.getOxygenTankCapacity(tank) - tank.getItemDamage();
+    }
+
+    public static boolean drainOxygenTank(EntityPlayerMP player, ItemStack tank, int amount)
+    {
+        if (amount > OxygenUtil.getOxygenTankLevel(tank))
         {
-            return 0;
+            return false;
         }
-
-        return 9;
+        tank.damageItem(1, player);
+        return true;
     }
 
     public static boolean hasValidOxygenSetup(EntityPlayerMP player)
     {
-        boolean missingComponent = false;
-
         GCPlayerStats stats = GCPlayerStats.get(player);
 
         if (stats.extendedInventory.getStackInSlot(0) == null || !OxygenUtil.isItemValidForPlayerTankInv(0, stats.extendedInventory.getStackInSlot(0)))
@@ -371,7 +378,7 @@ public class OxygenUtil
 
             if (!handled)
             {
-                missingComponent = true;
+                return false;
             }
         }
 
@@ -397,7 +404,7 @@ public class OxygenUtil
 
             if (!handled)
             {
-                missingComponent = true;
+                return false;
             }
         }
 
@@ -431,11 +438,11 @@ public class OxygenUtil
 
             if (!handled)
             {
-                missingComponent = true;
+                return false;
             }
         }
 
-        return !missingComponent;
+        return true;
     }
 
     public static boolean isItemValidForPlayerTankInv(int slotIndex, ItemStack stack)
