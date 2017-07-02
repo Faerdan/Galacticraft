@@ -238,7 +238,8 @@ public class GCItems
 
         for (int i = 0; i < ItemBasic.names.length; i++)
         {
-            if (ItemBasic.names[i].contains("ingot") || ItemBasic.names[i].contains("compressed") || ItemBasic.names[i].contains("wafer"))
+            // Don't registed ingotCopper (3) or ingotTin (4)
+            if (i != 3 && i != 4 && (ItemBasic.names[i].contains("ingot") || ItemBasic.names[i].contains("compressed") || ItemBasic.names[i].contains("wafer")))
             {
                 OreDictionary.registerOre(ItemBasic.names[i], new ItemStack(GCItems.basicItem, 1, i));
             }
